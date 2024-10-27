@@ -37,6 +37,11 @@ public class User implements UserDetails, Principal {
 
     private String address;
 
+    private Integer delays = 0;
+
+    @OneToMany(mappedBy = "user")
+    private List<Copy> copies;
+
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Role> roles;
 
@@ -45,7 +50,7 @@ public class User implements UserDetails, Principal {
 
         return this.roles
                 .stream()
-                .map(r -> new SimpleGrantedAuthority(r.getName()))
+                .map(r -> new SimpleGrantedAuthority("ROLE_" + r.getName()))
                 .collect(Collectors.toList());
     }
 

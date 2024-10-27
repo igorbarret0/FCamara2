@@ -16,15 +16,22 @@ public class BackendChallengeApplication {
 
 	@Bean
 	public CommandLineRunner runner(RoleRepository roleRepository) {
-
 		return args -> {
+
 			if (roleRepository.findByName("USER").isEmpty()) {
-				roleRepository.save(
-						new Role("USER")
-				);
+				roleRepository.save(new Role("USER"));
+				System.out.println("Role USER was initialized");
 			} else {
 				System.out.println("Role USER was already initialized");
 			}
+
+			if (roleRepository.findByName("ADMIN").isEmpty()) {
+				roleRepository.save(new Role("ADMIN"));
+				System.out.println("Role ADMIN was initialized");
+			} else {
+				System.out.println("Role ADMIN was already initialized");
+			}
 		};
 	}
+
 }
