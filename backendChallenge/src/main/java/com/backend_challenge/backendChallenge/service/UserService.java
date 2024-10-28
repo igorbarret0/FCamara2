@@ -3,6 +3,8 @@ package com.backend_challenge.backendChallenge.service;
 import com.backend_challenge.backendChallenge.dtos.AddressDto;
 import com.backend_challenge.backendChallenge.dtos.UserResponse;
 import com.backend_challenge.backendChallenge.entites.User;
+import com.backend_challenge.backendChallenge.exceptionHandler.AdminOnlyAccessException;
+import com.backend_challenge.backendChallenge.exceptionHandler.UserNotFoundException;
 import com.backend_challenge.backendChallenge.mapper.UserMapper;
 import com.backend_challenge.backendChallenge.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +25,7 @@ public class UserService {
         var user = (User) connectedUser.getPrincipal();
 
         if (user.getAuthorities().stream().noneMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new RuntimeException("Only admins can access this route");
+            throw new AdminOnlyAccessException("Only admins can access this route");
         }
 
         return userRepository.findAll()
@@ -37,13 +39,13 @@ public class UserService {
         var user = (User) connectedUser.getPrincipal();
 
         if (user.getAuthorities().stream().noneMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new RuntimeException("Only admins can access this route");
+            throw new AdminOnlyAccessException("Only admins can access this route");
         }
 
         return userRepository.findById(userId)
                 .map(
                         u -> userMapper.toUserResponse(u)
-                ).orElseThrow(() -> new RuntimeException("Could not found user with the provided ID: " + userId));
+                ).orElseThrow(() -> new UserNotFoundException("Could not found user with the provided ID: " + userId));
     }
 
     public void updateUser(AddressDto address, Authentication connectedUser) {

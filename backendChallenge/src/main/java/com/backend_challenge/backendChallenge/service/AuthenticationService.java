@@ -1,6 +1,7 @@
 package com.backend_challenge.backendChallenge.service;
 
 import com.backend_challenge.backendChallenge.entites.User;
+import com.backend_challenge.backendChallenge.exceptionHandler.RoleException;
 import com.backend_challenge.backendChallenge.repository.RoleRepository;
 import com.backend_challenge.backendChallenge.repository.UserRepository;
 import com.backend_challenge.backendChallenge.security.JwtService;
@@ -29,7 +30,7 @@ public class AuthenticationService {
     public void register(RegisterRequest request) {
 
         var userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("Role USER was not initialized"));
+                .orElseThrow(() -> new RoleException("Role USER was not initialized"));
 
 
         var newUser = new User();

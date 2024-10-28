@@ -4,6 +4,7 @@ import com.backend_challenge.backendChallenge.dtos.CopyRequest;
 import com.backend_challenge.backendChallenge.dtos.CopyResponse;
 import com.backend_challenge.backendChallenge.entites.Copy;
 import com.backend_challenge.backendChallenge.entites.User;
+import com.backend_challenge.backendChallenge.exceptionHandler.*;
 import com.backend_challenge.backendChallenge.mapper.CopyMapper;
 import com.backend_challenge.backendChallenge.repository.BookRepository;
 import com.backend_challenge.backendChallenge.repository.CopyRepository;
@@ -30,16 +31,16 @@ public class CopyService {
         var user = (User) connectedUser.getPrincipal();
 
         if (user.getAuthorities().stream().noneMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new RuntimeException("Only admins can access this route");
+            throw new AdminOnlyAccessException("Only admins can access this route");
         }
 
         var bookToCopy = bookRepository.findById(request.bookId())
-                .orElseThrow(() -> new RuntimeException("Could not found a book with the provided ID: " + request.bookId()));
+                .orElseThrow(() -> new BookNotFoundException("Could not found a book with the provided ID: " + request.bookId()));
 
         Copy copy = new Copy();
 
         if (!bookToCopy.getTitle().equals(request.title())) {
-            throw new RuntimeException("The Title of the book you wanna generate a copy is wrong");
+            throw new InvalidTitleException("The Title of the book you wanna generate a copy is wrong");
         }
 
         copy.setTitle(request.title());
@@ -65,23 +66,23 @@ public class CopyService {
 
         return copyRepository.findById(copyId)
                 .map(copy -> copyMapper.toCopyResponse(copy))
-                .orElseThrow(() -> new RuntimeException("Could not found a book with the provided ID: " + copyId));
+                .orElseThrow(() -> new CopyNotFoundException("Could not found a book with the provided ID: " + copyId));
     }
 
     public String rentCopyBook(Long bookId, Authentication connectedUser) {
 
         var bookFound = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Could not found book with the provided ID: " + bookId));
+                .orElseThrow(() -> new BookNotFoundException("Could not found book with the provided ID: " + bookId));
 
         var availableCopy = bookFound.getBookCopies()
                 .stream().filter(Copy::isAvailable)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("No available copies to rent for the book:"  + bookFound.getTitle()));
+                .orElseThrow(() -> new NotAvailableCopiesException("No available copies to rent for the book:"  + bookFound.getTitle()));
 
         var user = (User) connectedUser.getPrincipal();
 
         if (user.getDelays() > 2) {
-            throw new RuntimeException("You delayed you return more than two times, so you cannot rent anymore :(");
+            throw new RentalSuspensionException("You delayed you return more than two times, so you cannot rent anymore :(");
         }
 
         availableCopy.setUser(user);
@@ -99,19 +100,19 @@ public class CopyService {
     public void returnRentedBook( String copyCode, Authentication connectedUser) {
 
         var copy = copyRepository.findCopyByCopyCode(copyCode)
-                .orElseThrow(() -> new RuntimeException("No copy found with the provided Code: " + copyCode));
+                .orElseThrow(() -> new CopyNotFoundException("No copy found with the provided Code: " + copyCode));
 
         var book = bookRepository.findBookByTitle(copy.getTitle())
-                .orElseThrow(() -> new RuntimeException("Book not found with the provided Title: " + copy.getTitle()));
+                .orElseThrow(() -> new BookNotFoundException("Book not found with the provided Title: " + copy.getTitle()));
 
         if (copy.isAvailable()) {
-            throw new RuntimeException("This copy is already returned.");
+            throw new CopyAlreadyReturnedException("This copy is already returned.");
         }
 
         var user = (User) connectedUser.getPrincipal();
 
         if (!copy.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You not rented this book");
+            throw new UnrentedBookAccessException("You not rented this book");
         }
 
         LocalDate dueDate = copy.getRentedAt().plusWeeks(1);

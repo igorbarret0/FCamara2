@@ -5,6 +5,8 @@ import com.backend_challenge.backendChallenge.dtos.BookResponse;
 import com.backend_challenge.backendChallenge.dtos.UpdateBookRequest;
 import com.backend_challenge.backendChallenge.entites.Book;
 import com.backend_challenge.backendChallenge.entites.User;
+import com.backend_challenge.backendChallenge.exceptionHandler.AdminOnlyAccessException;
+import com.backend_challenge.backendChallenge.exceptionHandler.BookNotFoundException;
 import com.backend_challenge.backendChallenge.mapper.BookMapper;
 import com.backend_challenge.backendChallenge.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ public class BookService {
         var user = (User) connectedUser.getPrincipal();
 
         if (user.getAuthorities().stream().noneMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new RuntimeException("Only admins can access this route");
+            throw new AdminOnlyAccessException("Only admins can access this route");
         }
 
         Book newBook = new Book();
@@ -49,7 +51,7 @@ public class BookService {
 
         return bookRepository.findById(bookId)
                 .map(book -> bookMapper.toBookResponse(book)
-                ).orElseThrow(() -> new RuntimeException("Could not found a book with ID: " + bookId));
+                ).orElseThrow(() -> new BookNotFoundException("Could not found a book with ID: " + bookId));
     }
 
     public void updateBook(Long bookId, UpdateBookRequest request, Authentication connectedUser) {
@@ -57,11 +59,11 @@ public class BookService {
         var user = (User) connectedUser.getPrincipal();
 
         if (user.getAuthorities().stream().noneMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new RuntimeException("Only admins can access this route");
+            throw new AdminOnlyAccessException("Only admins can access this route");
         }
 
         var bookFound = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Could not found a book with ID: " + bookId));
+                    .orElseThrow(() -> new BookNotFoundException("Could not found a book with ID: " + bookId));
 
         bookFound.setTitle(request.title());
         bookFound.setAuthorName(request.authorName());
